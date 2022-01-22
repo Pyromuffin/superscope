@@ -254,8 +254,8 @@ fstETab :: struct {
     val_arr:     **u8;
 }
 
-value_change_callback :: #type (user_callback_data_pointer : *void, time : u64, facidx : fstHandle, value : *u8) -> void;
-value_change_callback_varlen :: #type (user_callback_data_pointer : *void, time : u64,  facidx : fstHandle, value : *u8,  len : u32) -> void;
+value_change_callback :: #type (user_callback_data_pointer : *void, time : u64, facidx : fstHandle, value : *u8) -> void #c_call;
+value_change_callback_varlen :: #type (user_callback_data_pointer : *void, time : u64,  facidx : fstHandle, value : *u8,  len : u32) -> void #c_call;
 
 zlib :: #foreign_library "windows/zlib";
 fstlib :: #foreign_library "windows/fstlib";

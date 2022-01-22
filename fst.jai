@@ -45,13 +45,24 @@ get_c_files :: (path : string) -> [] string {
 }
 */
 
+iterate_callback :: (user_callback_data_pointer : *void, time : u64, facidx : fstHandle, value : *u8) -> void #c_call
+{
+    ctx := <<cast(*Context)user_callback_data_pointer;
+    push_context ctx{
+        str := to_string(value);
+        print("value changed at time % to %\n", time, str);
+    }
+}
 
 
 main :: () {
     ctx := fstReaderOpen("C:\\Users\\pyrom\\Desktop\\jai\\FST\\test.fst");
     version := fstReaderGetVersionString(ctx);
     maxHandle := fstReaderGetMaxHandle(ctx);
+    startTime := fstReaderGetStartTime(ctx);
+    endTime := fstReaderGetEndTime(ctx);
     print("max handle: %\n", maxHandle);
+    
 
     hier := fstReaderIterateHier(ctx);
     while(hier != null){
@@ -60,13 +71,15 @@ main :: () {
             if(hierType == fstHierType.SCOPE) {
                 scope := hier.u.scope;
                 print("%\n", scope);
-                //print("% : %\n", to_string(scope.name), to_string(scope.component));
             }
 
             if(hierType == fstHierType.VAR) {
                 var := hier.u.var;
-            
+                handle := var.handle;
                 print("%\n", var );
+                fstReaderClrFacProcessMaskAll(ctx);
+                fstReaderSetFacProcessMask(ctx, handle);
+                fstReaderIterBlocks(ctx, iterate_callback, *context, null);
             }
 
 
