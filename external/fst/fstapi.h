@@ -38,7 +38,7 @@ extern "C" {
 #if defined(_MSC_VER)
     #include "fst_win_unistd.h"
 #else
-    #include <unistd.h>
+   // #include <unistd.h>
 #endif
 #include <time.h>
 
@@ -334,7 +334,6 @@ union {
         } u;
 };
 
-
 struct fstETab
 {
 char *name;
@@ -400,53 +399,53 @@ void            fstWriterSetVersion(void *ctx, const char *vers);
 /*
  * reader functions
  */
-void            fstReaderClose(void *ctx);
-void            fstReaderClrFacProcessMask(void *ctx, fstHandle facidx);
-void            fstReaderClrFacProcessMaskAll(void *ctx);
-uint64_t        fstReaderGetAliasCount(void *ctx);
-const char *    fstReaderGetCurrentFlatScope(void *ctx);
-void *          fstReaderGetCurrentScopeUserInfo(void *ctx);
-int             fstReaderGetCurrentScopeLen(void *ctx);
-const char *    fstReaderGetDateString(void *ctx);
-int             fstReaderGetDoubleEndianMatchState(void *ctx);
-uint64_t        fstReaderGetDumpActivityChangeTime(void *ctx, uint32_t idx);
-unsigned char   fstReaderGetDumpActivityChangeValue(void *ctx, uint32_t idx);
-uint64_t        fstReaderGetEndTime(void *ctx);
-int             fstReaderGetFacProcessMask(void *ctx, fstHandle facidx);
-int             fstReaderGetFileType(void *ctx);
-int             fstReaderGetFseekFailed(void *ctx);
-fstHandle       fstReaderGetMaxHandle(void *ctx);
-uint64_t        fstReaderGetMemoryUsedByWriter(void *ctx);
-uint32_t        fstReaderGetNumberDumpActivityChanges(void *ctx);
-uint64_t        fstReaderGetScopeCount(void *ctx);
-uint64_t        fstReaderGetStartTime(void *ctx);
-signed char     fstReaderGetTimescale(void *ctx);
-int64_t         fstReaderGetTimezero(void *ctx);
-uint64_t        fstReaderGetValueChangeSectionCount(void *ctx);
-char *          fstReaderGetValueFromHandleAtTime(void *ctx, uint64_t tim, fstHandle facidx, char *buf);
-uint64_t        fstReaderGetVarCount(void *ctx);
-const char *    fstReaderGetVersionString(void *ctx);
-struct fstHier *fstReaderIterateHier(void *ctx);
-int             fstReaderIterateHierRewind(void *ctx);
-int             fstReaderIterBlocks(void *ctx,
+__declspec(dllexport) void            fstReaderClose(void *ctx);
+__declspec(dllexport) void            fstReaderClrFacProcessMask(void *ctx, fstHandle facidx);
+__declspec(dllexport) void            fstReaderClrFacProcessMaskAll(void *ctx);
+__declspec(dllexport) uint64_t        fstReaderGetAliasCount(void *ctx);
+__declspec(dllexport) const char *    fstReaderGetCurrentFlatScope(void *ctx);
+__declspec(dllexport) void *          fstReaderGetCurrentScopeUserInfo(void *ctx);
+__declspec(dllexport) int             fstReaderGetCurrentScopeLen(void *ctx);
+__declspec(dllexport) const char *    fstReaderGetDateString(void *ctx);
+__declspec(dllexport) int             fstReaderGetDoubleEndianMatchState(void *ctx);
+__declspec(dllexport) uint64_t        fstReaderGetDumpActivityChangeTime(void *ctx, uint32_t idx);
+__declspec(dllexport) unsigned char   fstReaderGetDumpActivityChangeValue(void *ctx, uint32_t idx);
+__declspec(dllexport) uint64_t        fstReaderGetEndTime(void *ctx);
+__declspec(dllexport) int             fstReaderGetFacProcessMask(void *ctx, fstHandle facidx);
+__declspec(dllexport) int             fstReaderGetFileType(void *ctx);
+__declspec(dllexport) int             fstReaderGetFseekFailed(void *ctx);
+__declspec(dllexport) fstHandle       fstReaderGetMaxHandle(void *ctx);
+__declspec(dllexport) uint64_t        fstReaderGetMemoryUsedByWriter(void *ctx);
+__declspec(dllexport) uint32_t        fstReaderGetNumberDumpActivityChanges(void *ctx);
+__declspec(dllexport) uint64_t        fstReaderGetScopeCount(void *ctx);
+__declspec(dllexport) uint64_t        fstReaderGetStartTime(void *ctx);
+__declspec(dllexport) signed char     fstReaderGetTimescale(void *ctx);
+__declspec(dllexport) int64_t         fstReaderGetTimezero(void *ctx);
+__declspec(dllexport) uint64_t        fstReaderGetValueChangeSectionCount(void *ctx);
+__declspec(dllexport) char *          fstReaderGetValueFromHandleAtTime(void *ctx, uint64_t tim, fstHandle facidx, char *buf);
+__declspec(dllexport) uint64_t        fstReaderGetVarCount(void *ctx);
+__declspec(dllexport) const char *    fstReaderGetVersionString(void *ctx);
+__declspec(dllexport) struct fstHier *fstReaderIterateHier(void *ctx);
+__declspec(dllexport) int             fstReaderIterateHierRewind(void *ctx);
+__declspec(dllexport) int             fstReaderIterBlocks(void *ctx,
                         void (*value_change_callback)(void *user_callback_data_pointer, uint64_t time, fstHandle facidx, const unsigned char *value),
                         void *user_callback_data_pointer, FILE *vcdhandle);
-int             fstReaderIterBlocks2(void *ctx,
+__declspec(dllexport) int             fstReaderIterBlocks2(void *ctx,
                         void (*value_change_callback)(void *user_callback_data_pointer, uint64_t time, fstHandle facidx, const unsigned char *value),
                         void (*value_change_callback_varlen)(void *user_callback_data_pointer, uint64_t time, fstHandle facidx, const unsigned char *value, uint32_t len),
                         void *user_callback_data_pointer, FILE *vcdhandle);
-void            fstReaderIterBlocksSetNativeDoublesOnCallback(void *ctx, int enable);
+__declspec(dllexport) void            fstReaderIterBlocksSetNativeDoublesOnCallback(void *ctx, int enable);
 __declspec(dllexport) void *          fstReaderOpen(const char *nam);
-void *          fstReaderOpenForUtilitiesOnly(void);
-const char *    fstReaderPopScope(void *ctx);
-int             fstReaderProcessHier(void *ctx, FILE *vcdhandle);
-const char *    fstReaderPushScope(void *ctx, const char *nam, void *user_info);
-void            fstReaderResetScope(void *ctx);
-void            fstReaderSetFacProcessMask(void *ctx, fstHandle facidx);
-void            fstReaderSetFacProcessMaskAll(void *ctx);
-void            fstReaderSetLimitTimeRange(void *ctx, uint64_t start_time, uint64_t end_time);
-void            fstReaderSetUnlimitedTimeRange(void *ctx);
-void            fstReaderSetVcdExtensions(void *ctx, int enable);
+__declspec(dllexport) void *          fstReaderOpenForUtilitiesOnly(void);
+__declspec(dllexport) const char *    fstReaderPopScope(void *ctx);
+__declspec(dllexport) int             fstReaderProcessHier(void *ctx, FILE *vcdhandle);
+__declspec(dllexport) const char *    fstReaderPushScope(void *ctx, const char *nam, void *user_info);
+__declspec(dllexport) void            fstReaderResetScope(void *ctx);
+__declspec(dllexport) void            fstReaderSetFacProcessMask(void *ctx, fstHandle facidx);
+__declspec(dllexport) void            fstReaderSetFacProcessMaskAll(void *ctx);
+__declspec(dllexport) void            fstReaderSetLimitTimeRange(void *ctx, uint64_t start_time, uint64_t end_time);
+__declspec(dllexport) void            fstReaderSetUnlimitedTimeRange(void *ctx);
+__declspec(dllexport) void            fstReaderSetVcdExtensions(void *ctx, int enable);
 
 
 /*
