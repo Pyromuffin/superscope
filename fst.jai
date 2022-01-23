@@ -48,9 +48,10 @@ get_c_files :: (path : string) -> [] string {
 iterate_callback :: (user_callback_data_pointer : *void, time : u64, facidx : fstHandle, value : *u8) -> void #c_call
 {
     // i guess we need to push the jai context to use jai native calls in a c_call
-    ctx := << cast(*Context)user_callback_data_pointer;
+    ctx : Context;
+    signals := <<cast(*[..] Signal)user_callback_data_pointer;
     push_context ctx {
-        ProcessData(facidx, time, value);
+        ProcessData(facidx, time, value, signals);
     }
 }
 
@@ -108,8 +109,6 @@ GetSignalTransition :: (using signal : Signal, index : int) -> u64, u64 {
     return time, value;
 }
 
-scopes : [..] fstHier;
-signals : [..] Signal;
 
 
 Parse8 :: (depth : int, str : *u8) -> u8 {
@@ -162,7 +161,7 @@ Parse64 :: (depth : int, str : *u8) -> u64 {
 }
 
 
-ProcessData :: (handle : fstHandle, time : u64, c_str : *u8) {
+ProcessData :: (handle : fstHandle, time : u64, c_str : *u8, signals : [..] Signal ) {
     // 48 for zero
     // 49 for one
     // looks like it is stored MSB first
@@ -233,49 +232,48 @@ PrintSignal :: (signal : Signal, lengthOfTime : u64) {
     print("%\n", builder_to_string(*builder) );
 }
 
-main :: () {
-    ctx := fstReaderOpen("C:\\Users\\pyrom\\Desktop\\jai\\FST\\test.fst");
+
+
+LoadSignals :: (path : string) -> [..] Signal {
+
+    ctx := fstReaderOpen( to_c_string(path) );
     version := fstReaderGetVersionString(ctx);
     maxHandle := fstReaderGetMaxHandle(ctx);
     startTime := fstReaderGetStartTime(ctx);
     endTime := fstReaderGetEndTime(ctx);
     signalCount := fstReaderGetScopeCount(ctx);
     waveCount :=  fstReaderGetMaxHandle(ctx);
+    signals : [..] Signal;
+    scopes : [..] fstHier;
     array_resize(*scopes, xx waveCount);
     array_resize(*signals, xx waveCount + 1);
-
-    print("max handle: %\n", maxHandle);
-    
 
     hier := fstReaderIterateHier(ctx);
     while(hier != null){
         hierType := hier.htyp;
-            print("% ", hierType);
+            //print("% ", hierType);
             if(hierType == fstHierType.SCOPE) {
                 scope := hier.u.scope;
-                print("%\n", scope);
+                //print("%\n", scope);
             }
 
             if(hierType == fstHierType.VAR) {
                 var := hier.u.var;
                 handle := var.handle;
                 signals[handle].depth = var.length;
-                signals[handle].name = to_string(var.name.data);
+                signals[handle].name = copy_string( to_string(var.name.data) ); 
 
-                print("%\n", var );
+                //print("%\n", var );
                 fstReaderClrFacProcessMaskAll(ctx);
                 fstReaderSetFacProcessMask(ctx, handle);
-                fstReaderIterBlocks(ctx, iterate_callback, *context, null);
+                
+                fstReaderIterBlocks(ctx, iterate_callback, *signals, null);
             }
 
 
         hier = fstReaderIterateHier(ctx);
 
     }   
-  
-    print("\n");
-    PrintSignal(signals[9], 300);
-    PrintSignal(signals[5], 300);
 
-
+    return signals;
 }
