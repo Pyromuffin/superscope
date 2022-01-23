@@ -1,0 +1,8 @@
+.build
+.vscode
+*.dll
+*.lib
+*.exe
+*.pdb
+*.vcxproj
+*.vcxproj.user

@@ -11,17 +11,18 @@
 //
 
 #import "GetRect";  // Other imports are below, but the point of this example is to use GetRect so this #import goes here.
+#import "fst";
 
 //
 // This example was copied from modules/Simp/examples/example.jai.
 // It will continue to diverge over time, probably.
 //
 
-SCALE :: 1;  // I use this during development to quickly make the window real big.
+SCALE :: 1.5;  // I use this during development to quickly make the window real big.
 
 my_window: Window_Type;
-window_width  : s32 = 1920*SCALE;
-window_height : s32 = 1080*SCALE;
+window_width  : s32 = xx (1920*SCALE);
+window_height : s32 = xx (1080*SCALE);
 
 current_time: float64;
 last\  _time: float64;
@@ -239,7 +240,10 @@ main :: () {
     }
 }
 
-#load "fst.jai";
+
+signalLength : u64 = 100;
+signalString := "";
+
 
 
 draw_one_frame :: (dt: float) {
@@ -260,13 +264,26 @@ draw_one_frame :: (dt: float) {
     button_theme.label_theme.alignment = .Left;
 
     pressed : bool;
+    signalIndex := -1;
+
 
     for signals {
         pressed = button(r, it.name, *button_theme, it_index);
+        if(pressed) signalIndex = it_index;
         r.y -= k/3;
     }
     
+    slider_theme: Slider_Theme;
+    slider_theme.foreground.font = button_font;
+    // Integer value:
+    r.y -= k;
+    slider(r, *signalLength, 0, 1000, 1, *slider_theme, "signal length");
 
+    if(signalIndex >= 0){
+        signalString = SignalToString(signals[signalIndex], signalLength);
+    }
+
+    pressed = false;
 
     r.y -= k;
     button_theme.label_theme.alignment = .Center;
@@ -342,8 +359,7 @@ draw_one_frame :: (dt: float) {
     //
 
     // Float value:
-    slider_theme: Slider_Theme;
-    slider_theme.foreground.font = button_font;
+ 
     r = get_rect(7*k, 7*k, 3*k, button_font.character_height*1.35);
     slider(r, *slider_float_value, 0.0, 60.0, 3.0, *slider_theme, "", "fps");
 
@@ -549,11 +565,11 @@ draw_one_frame :: (dt: float) {
     //
 
     label_theme: Label_Theme;
-    label_theme.font       = title_font;
+    label_theme.font       = signal_font;
     label_theme.text_color = .{.9, .5, .5, 1};
     label_height := title_font.character_height*1.5;
     r = get_rect(0, window_height - label_height, xx window_width, label_height);
-    label(r, "Some Widgets", *label_theme);
+    label(r, signalString, *label_theme);
 
     
     draw_popups();  // This draws Subwindows as well.
@@ -610,6 +626,10 @@ my_init_fonts :: () {
     pixel_height = window_height / 30;
     story_font = Simp.get_font_at_size("data", "OpenSans-BoldItalic.ttf", pixel_height);
 //    title_font = Simp.get_font_at_size("data", "OpenSans-BoldItalic.ttf", pixel_height);
+
+    pixel_height = window_height / 60;
+    signal_font = Simp.get_font_at_size("data", "Inconsolata.otf",  pixel_height);
+
 }
 
 Font :: Simp.Dynamic_Font;
@@ -618,6 +638,7 @@ my_font:     *Font;
 button_font: *Font;
 title_font:  *Font;
 story_font:  *Font;
+signal_font: *Font;
 
 working_directory_set := false;
 

@@ -1,8 +1,9 @@
+
+
 #import "Basic";
 #import "String";
 #load "fst_bindings.jai";
-
-
+#scope_file
 /*
 #import "BuildCpp";
 #import "File_Utilities";
@@ -81,18 +82,7 @@ GetBytesForDepth :: (depth : int) -> int {
 
 
 
-Signal :: struct {
-    name : string;
-    depth : int;
 
-    times : [..] u64;
-    union{
-        u8s : [..] u8;
-        u16s : [..] u16;
-        u32s : [..] u32;
-        u64s : [..] u64;
-    }
-}
 
 GetSignalTransition :: (using signal : Signal, index : int) -> u64, u64 {
     time := times[index];
@@ -188,14 +178,27 @@ ProcessData :: (handle : fstHandle, time : u64, c_str : *u8, signals : [..] Sign
     array_add(*signal.times, time);
 }
 
-PrintSignal :: (signal : Signal, lengthOfTime : u64) {
+#scope_export
+
+Signal :: struct {
+    name : string;
+    depth : int;
+
+    times : [..] u64;
+    union{
+        u8s : [..] u8;
+        u16s : [..] u16;
+        u32s : [..] u32;
+        u64s : [..] u64;
+    }
+}
+
+
+SignalToString :: (signal : Signal, lengthOfTime : u64) -> string {
     builder : String_Builder;
     init_string_builder(*builder);
     
     transitions := signal.times.count;
-
-    append(*builder, signal.name);
-    append(*builder, " : ");
 
     transitionIndex := 0;
     nextT, currentState := GetSignalTransition(signal, transitionIndex);
@@ -229,7 +232,7 @@ PrintSignal :: (signal : Signal, lengthOfTime : u64) {
         }
     }
 
-    print("%\n", builder_to_string(*builder) );
+    return builder_to_string(*builder);
 }
 
 
