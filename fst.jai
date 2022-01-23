@@ -47,13 +47,191 @@ get_c_files :: (path : string) -> [] string {
 
 iterate_callback :: (user_callback_data_pointer : *void, time : u64, facidx : fstHandle, value : *u8) -> void #c_call
 {
-    ctx := <<cast(*Context)user_callback_data_pointer;
-    push_context ctx{
-        str := to_string(value);
-        print("value changed at time % to %\n", time, str);
+    // i guess we need to push the jai context to use jai native calls in a c_call
+    ctx := << cast(*Context)user_callback_data_pointer;
+    push_context ctx {
+        ProcessData(facidx, time, value);
     }
 }
 
+TypeForDepth :: ($depth : int) -> Type {
+    if(depth <= 8)
+        return u8;
+    else if (depth <= 16)
+        return u16;
+    else if (depth <= 32)
+        return u32;
+    else
+        return u64;
+}
+
+
+
+GetBytesForDepth :: (depth : int) -> int {
+    if(depth <= 8)
+        return 8;
+    else if (depth <= 16)
+        return 16;
+    else if (depth <= 32)
+        return 32;
+    else
+        return 64;
+}
+
+
+
+Signal :: struct {
+    name : string;
+    depth : int;
+
+    times : [..] u64;
+    union{
+        u8s : [..] u8;
+        u16s : [..] u16;
+        u32s : [..] u32;
+        u64s : [..] u64;
+    }
+}
+
+GetSignalTransition :: (using signal : Signal, index : int) -> u64, u64 {
+    time := times[index];
+    value : u64;
+    if(depth <= 8)
+        value = xx u8s[index];
+    else if (depth <= 16)
+        value = xx u16s[index];
+    else if (depth <= 32)
+        value =  xx u32s[index];
+    else
+        value = u64s[index];
+    
+    return time, value;
+}
+
+scopes : [..] fstHier;
+signals : [..] Signal;
+
+
+Parse8 :: (depth : int, str : *u8) -> u8 {
+    
+    result : u8 = 0;
+    for 0 .. depth { // vectorize, i beg.
+        value := str[it] - 48;
+        shift := depth - it - 1;
+        result |= (value << shift);
+    }
+
+    return result;
+}
+
+Parse16 :: (depth : int, str : *u8) -> u16 {
+    
+    result : u16 = 0;
+    for 0 .. depth { // vectorize, i beg.
+        value := str[it] - 48;
+        shift := depth - it - 1;
+        result |= (value << shift);
+    }
+
+    return result;
+}
+
+Parse32 :: (depth : int, str : *u8) -> u32 {
+    
+    result : u32 = 0;
+    for 0 .. depth { // vectorize, i beg.
+        value := str[it] - 48;
+        shift := depth - it - 1;
+        result |= (value << shift);
+    }
+
+    return result;
+}
+
+
+Parse64 :: (depth : int, str : *u8) -> u64 {
+    
+    result : u64 = 0;
+    for 0 .. depth { // vectorize, i beg.
+        value := str[it] - 48;
+        shift := depth - it - 1;
+        result |= (value << shift);
+    }
+
+    return result;
+}
+
+
+ProcessData :: (handle : fstHandle, time : u64, c_str : *u8) {
+    // 48 for zero
+    // 49 for one
+    // looks like it is stored MSB first
+    signal := *signals[handle];
+    depth := signal.depth;
+    size := GetBytesForDepth(depth);
+    if(size == 8) {
+        value := Parse8(depth, c_str);
+        array_add(*signal.u8s, value);
+    }
+    else if(size == 16){
+        value := Parse16(depth, c_str);
+        array_add(*signal.u16s, value);
+    }
+    else if (size == 32){
+        value := Parse32(depth, c_str);
+        array_add(*signal.u32s, value);
+    }
+    else{
+        value := Parse64(depth, c_str);
+        array_add(*signal.u64s, value);
+    }
+
+    array_add(*signal.times, time);
+}
+
+PrintSignal :: (signal : Signal, lengthOfTime : u64) {
+    builder : String_Builder;
+    init_string_builder(*builder);
+    
+    transitions := signal.times.count;
+
+    append(*builder, signal.name);
+    append(*builder, " : ");
+
+    transitionIndex := 0;
+    nextT, currentState := GetSignalTransition(signal, transitionIndex);
+    zebra : u64;
+
+    for 0 .. lengthOfTime {
+        
+        if(it == nextT && transitionIndex < transitions){
+
+            nextT, currentState = GetSignalTransition(signal, transitionIndex);
+            transitionIndex += 1;
+            
+            if(transitionIndex < transitions)
+            {
+                nextT = GetSignalTransition(signal, transitionIndex);
+            }
+
+
+            append(*builder, "|" );
+            if(currentState == 0)
+                append(*builder, "_" );
+            else
+                append(*builder, "^");
+        }
+        else
+        {   
+            if(currentState == 0)
+                append(*builder, "__" );
+            else
+                append(*builder, "^^");
+        }
+    }
+
+    print("%\n", builder_to_string(*builder) );
+}
 
 main :: () {
     ctx := fstReaderOpen("C:\\Users\\pyrom\\Desktop\\jai\\FST\\test.fst");
@@ -61,6 +239,11 @@ main :: () {
     maxHandle := fstReaderGetMaxHandle(ctx);
     startTime := fstReaderGetStartTime(ctx);
     endTime := fstReaderGetEndTime(ctx);
+    signalCount := fstReaderGetScopeCount(ctx);
+    waveCount :=  fstReaderGetMaxHandle(ctx);
+    array_resize(*scopes, xx waveCount);
+    array_resize(*signals, xx waveCount + 1);
+
     print("max handle: %\n", maxHandle);
     
 
@@ -76,6 +259,9 @@ main :: () {
             if(hierType == fstHierType.VAR) {
                 var := hier.u.var;
                 handle := var.handle;
+                signals[handle].depth = var.length;
+                signals[handle].name = to_string(var.name.data);
+
                 print("%\n", var );
                 fstReaderClrFacProcessMaskAll(ctx);
                 fstReaderSetFacProcessMask(ctx, handle);
@@ -87,4 +273,9 @@ main :: () {
 
     }   
   
+    print("\n");
+    PrintSignal(signals[9], 300);
+    PrintSignal(signals[5], 300);
+
+
 }
