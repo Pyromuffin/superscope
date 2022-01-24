@@ -243,7 +243,10 @@ main :: () {
 
 signalLength : u64 = 100;
 signalString := "";
-
+signalVerts : [..] Vector3;
+selectedAny := false;
+wavePitch := 10.0;
+waveHeight := 30.0;
 
 
 draw_one_frame :: (dt: float) {
@@ -278,10 +281,20 @@ draw_one_frame :: (dt: float) {
     // Integer value:
     r.y -= k;
     slider(r, *signalLength, 0, 1000, 1, *slider_theme, "signal length");
+    r.y -= k;
+    slider(r, *wavePitch, 0.0, 100.0, 1.0, *slider_theme, "pitch");
+    r.y -= k;
+    slider(r, *waveHeight, 0.0, 100.0, 1.0, *slider_theme, "height");
 
     if(signalIndex >= 0){
-        signalString = SignalToString(signals[signalIndex], signalLength);
+        signalVerts = CalculateSignalVertices(signals[signalIndex], signalLength);
+        selectedAny = true;
     }
+
+
+
+    if(selectedAny)
+        DrawSignalVerts(signalVerts, make_vector3(k * 5, k * 5, k * 5), k * .01, wavePitch, waveHeight);
 
     pressed = false;
 
@@ -293,7 +306,7 @@ draw_one_frame :: (dt: float) {
     button_theme.label_theme.alignment = .Right;
     pressed  = button(r, "69,105 leaves.", *button_theme);
 
-
+/*
     
     checkbox_theme: Checkbox_Theme;
     checkbox_theme.font = button_font; // @Cleanup: We have to manually set a font for now.
@@ -573,7 +586,7 @@ draw_one_frame :: (dt: float) {
 
     
     draw_popups();  // This draws Subwindows as well.
-    
+    */
     
     //
     // Swap buffers!

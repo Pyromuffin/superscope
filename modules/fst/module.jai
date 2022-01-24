@@ -1,9 +1,9 @@
+#scope_file
 
-
+#import "Math";
 #import "Basic";
 #import "String";
 #load "fst_bindings.jai";
-#scope_file
 /*
 #import "BuildCpp";
 #import "File_Utilities";
@@ -279,4 +279,98 @@ LoadSignals :: (path : string) -> [..] Signal {
     }   
 
     return signals;
+}
+
+CalculateSignalVertices :: (signal : Signal, length : u64) -> [..] Vector3 {
+
+    vec3 :: make_vector3;
+    output : [..] Vector3;
+    //add :: (v : Vector3) -> Vector3 { array_add(*output, v); return v; }
+
+    transitions := signal.times.count;
+
+    t, state := GetSignalTransition(signal, 0);
+
+    cursor := vec3(0, xx state, 0);
+    array_add(*output, cursor);
+    
+    for 1 .. transitions -1 {
+        previousT := t;
+        previousState := state;
+        t, state = GetSignalTransition(signal, it);
+        dist : float = xx (t - previousT);
+        cursor += vec3(1,0,0) * dist;
+        array_add(*output, cursor);
+        cursor.y = xx state;
+        array_add(*output, cursor);
+    }
+
+    return output;
+}
+
+
+DrawSignalVerts :: ( verts : []Vector3, offset : Vector3, thickness : float, pitch : float, height : float) {
+    Simp :: #import "Simp";
+    Simp.set_shader_for_color();
+
+    //immediate_quad:  (p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, color := Vector4.{1,1,1,1}, uv0 := Vector2.{0,0}, uv1 := Vector2.{1,0}, uv2 := Vector2.{1,1}, uv3 := Vector2.{0, 1});
+
+    color := make_vector4(1,1,1,1);
+    dist := 0.0;
+
+    //debug_break();
+
+    for 0 .. (verts.count) - 2 {
+        start := verts[it];
+        end :=   verts[it + 1];
+
+        if( start.x - end.x == 0) { // vertical
+            p0, p1, p2, p3 : Vector3;
+
+            p0.x = dist - thickness /2;
+            p0.y = start.y * height;
+            p0.z = 0;
+
+            p1.x = dist + thickness /2;
+            p1.y = start.y * height;
+            p1.z = 0;
+
+            p2.x = dist + thickness /2;
+            p2.y = end.y * height;
+            p2.z = 0;
+
+            p3.x = dist - thickness /2;
+            p3.y = end.y * height;
+            p3.z = 0;
+
+            Simp.immediate_quad(p0 + offset, p1 + offset, p2 + offset, p3 + offset, color);
+        }
+        else { // horizontal
+            p0, p1, p2, p3 : Vector3;
+            startX := dist;
+            dist += (end.x - start.x) * pitch;
+
+            p0.x = startX;
+            p0.y = start.y * height + thickness /2;
+            p0.z = 0;
+
+            p1.x = dist;
+            p1.y = start.y * height + thickness /2;
+            p1.z = 0;
+
+            p2.x = dist;
+            p2.y = start.y * height - thickness /2;
+            p2.z = 0;
+
+            p3.x = startX;
+            p3.y = start.y * height - thickness /2;
+            p3.z = 0;
+
+            Simp.immediate_quad(p0 + offset, p1 + offset, p2 + offset, p3 + offset, color);
+        }
+
+        
+        Simp.immediate_flush();
+    }
+
 }
