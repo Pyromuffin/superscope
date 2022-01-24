@@ -290,6 +290,8 @@ CalculateSignalVertices :: (signal : Signal, length : u64) -> [..] Vector3 {
     transitions := signal.times.count;
 
     t, state := GetSignalTransition(signal, 0);
+    state = min(state, 1);
+
 
     cursor := vec3(0, xx state, 0);
     array_add(*output, cursor);
@@ -298,6 +300,7 @@ CalculateSignalVertices :: (signal : Signal, length : u64) -> [..] Vector3 {
         previousT := t;
         previousState := state;
         t, state = GetSignalTransition(signal, it);
+        state = min(state, 1);
         dist : float = xx (t - previousT);
         cursor += vec3(1,0,0) * dist;
         array_add(*output, cursor);
@@ -368,9 +371,33 @@ DrawSignalVerts :: ( verts : []Vector3, offset : Vector3, thickness : float, pit
 
             Simp.immediate_quad(p0 + offset, p1 + offset, p2 + offset, p3 + offset, color);
         }
-
-        
-        Simp.immediate_flush();
     }
+
+    // draw last line
+    p0, p1, p2, p3 : Vector3;
+    start := verts[verts.count -1];
+    startX := dist;
+    dist += (1000) * pitch;
+
+    p0.x = startX;
+    p0.y = start.y * height + thickness /2;
+    p0.z = 0;
+
+    p1.x = dist;
+    p1.y = start.y * height + thickness /2;
+    p1.z = 0;
+
+    p2.x = dist;
+    p2.y = start.y * height - thickness /2;
+    p2.z = 0;
+
+    p3.x = startX;
+    p3.y = start.y * height - thickness /2;
+    p3.z = 0;
+
+    Simp.immediate_quad(p0 + offset, p1 + offset, p2 + offset, p3 + offset, color);
+
+
+    Simp.immediate_flush();
 
 }

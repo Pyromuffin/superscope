@@ -140,6 +140,14 @@ signals : [..] Signal;
 main :: () {
 
     signals = LoadSignals("C:\\Users\\pyrom\\Desktop\\jai\\FST\\test.fst");
+    dummy : [..] Vector3;
+    array_add(*signalVerts, dummy);
+
+    for signals {
+        if(it_index == 0) continue;
+        verts := CalculateSignalVertices(it, 300);
+        array_add(*signalVerts, verts);
+    }
 
     #if OS == .WINDOWS {
         Windows :: #import "Windows";
@@ -243,10 +251,11 @@ main :: () {
 
 signalLength : u64 = 100;
 signalString := "";
-signalVerts : [..] Vector3;
+signalVerts : [..][..]Vector3;
 selectedAny := false;
 wavePitch := 10.0;
 waveHeight := 30.0;
+waveOffset := 0.0;
 
 
 draw_one_frame :: (dt: float) {
@@ -267,44 +276,39 @@ draw_one_frame :: (dt: float) {
     button_theme.label_theme.alignment = .Left;
 
     pressed : bool;
-    signalIndex := -1;
 
+    startHeight := r.y;
 
     for signals {
+        if(it_index == 0 || it_index == signals.count -1) continue;
         pressed = button(r, it.name, *button_theme, it_index);
-        if(pressed) signalIndex = it_index;
         r.y -= k/3;
     }
-    
+
+    r.y = startHeight;
+    // dont draw the waveform over the buttons
+    scissorRect := get_rect(k*3.5, 0, xx window_width, xx window_height);
+    set_scissor(scissorRect);
+    for signals {
+        if(it_index == 0 || it_index == signals.count -1) continue;
+        DrawSignalVerts(signalVerts[it_index], make_vector3(r.x + k* 3 + waveOffset, r.y, 0), k * .01, wavePitch, waveHeight);
+        r.y -= k/3;
+    }
+
+    scissorRect = get_rect(0, 0, xx window_width, xx window_height);
+    set_scissor(scissorRect);
+
     slider_theme: Slider_Theme;
     slider_theme.foreground.font = button_font;
     // Integer value:
-    r.y -= k;
+    r.y -= k /2;
     slider(r, *signalLength, 0, 1000, 1, *slider_theme, "signal length");
-    r.y -= k;
+    r.y -= k /2;
     slider(r, *wavePitch, 0.0, 100.0, 1.0, *slider_theme, "pitch");
-    r.y -= k;
+    r.y -= k /2;
     slider(r, *waveHeight, 0.0, 100.0, 1.0, *slider_theme, "height");
-
-    if(signalIndex >= 0){
-        signalVerts = CalculateSignalVertices(signals[signalIndex], signalLength);
-        selectedAny = true;
-    }
-
-
-
-    if(selectedAny)
-        DrawSignalVerts(signalVerts, make_vector3(k * 5, k * 5, k * 5), k * .01, wavePitch, waveHeight);
-
-    pressed = false;
-
-    r.y -= k;
-    button_theme.label_theme.alignment = .Center;
-    pressed  = button(r, "there are", *button_theme);
-
-    r.y -= k;
-    button_theme.label_theme.alignment = .Right;
-    pressed  = button(r, "69,105 leaves.", *button_theme);
+    r.y -= k /2;
+    slider(r, *waveOffset, -10000.0, 10000.0, 1.0, *slider_theme, "offset");
 
 /*
     
