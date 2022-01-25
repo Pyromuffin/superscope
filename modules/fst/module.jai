@@ -3,6 +3,8 @@
 #import "Math";
 #import "Basic";
 #import "String";
+Simp :: #import "Simp";
+
 #load "fst_bindings.jai";
 /*
 #import "BuildCpp";
@@ -312,8 +314,52 @@ CalculateSignalVertices :: (signal : Signal, length : u64) -> [..] Vector3 {
 }
 
 
+DrawLine :: (start : Vector3, end : Vector3, thickness : float, color : Vector4 = Vector4.{1,1,1,1} ) {
+    Simp.set_shader_for_color();
+
+    // only draws vertical or horizontal lines for now
+    p0, p1, p2, p3 : Vector3;
+
+   if( start.x - end.x == 0) { // vertical
+        p0.x = start.x - thickness /2;
+        p0.y = start.y;
+        p0.z = 0;
+
+        p1.x = start.x + thickness /2;
+        p1.y = start.y;
+        p1.z = 0;
+
+        p2.x = start.x + thickness /2;
+        p2.y = end.y;
+        p2.z = 0;
+
+        p3.x = start.x - thickness /2;
+        p3.y = end.y;
+        p3.z = 0;
+
+    }
+    else { // horizontal
+        p0.x = start.x;
+        p0.y = start.y + thickness /2;
+        p0.z = 0;
+
+        p1.x = end.x;
+        p1.y = start.y + thickness /2;
+        p1.z = 0;
+
+        p2.x = end.x;
+        p2.y = start.y - thickness /2;
+        p2.z = 0;
+
+        p3.x = start.x;
+        p3.y = start.y - thickness /2;
+        p3.z = 0;
+    }
+
+    Simp.immediate_quad(p0, p1, p2, p3, color);
+}
+
 DrawSignalVerts :: ( verts : []Vector3, offset : Vector3, thickness : float, pitch : float, height : float) {
-    Simp :: #import "Simp";
     Simp.set_shader_for_color();
 
     //immediate_quad:  (p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, color := Vector4.{1,1,1,1}, uv0 := Vector2.{0,0}, uv1 := Vector2.{1,0}, uv2 := Vector2.{1,1}, uv3 := Vector2.{0, 1});

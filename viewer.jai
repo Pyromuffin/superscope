@@ -257,6 +257,20 @@ wavePitch := 10.0;
 waveHeight := 30.0;
 waveOffset := 0.0;
 
+vec3 :: make_vector3;
+
+DrawTimelineTicks :: (start : Vector3, width : float, height : float, pitch : float, thickness : float, offset : float) {
+    tickLength := pitch;
+    phase := fmod(offset, tickLength) * vec3(1,0,0);
+    numberOfTicks := cast(int)ceil(width / tickLength);
+    for 0 .. numberOfTicks - 1 {
+        pos := start + phase;
+        pos.x += it * tickLength;
+        DrawLine(pos, pos + vec3(0,1,0) * height, thickness, Vector4.{0,0.3,0,1} );
+    }
+
+    Simp.immediate_flush();
+}
 
 draw_one_frame :: (dt: float) {
     // Simp.update_window(my_window);
@@ -294,6 +308,8 @@ draw_one_frame :: (dt: float) {
         DrawSignalVerts(signalVerts[it_index], make_vector3(r.x + k* 3 + waveOffset, r.y, 0), k * .01, wavePitch, waveHeight);
         r.y -= k/3;
     }
+    
+    DrawTimelineTicks(vec3(r.x + k* 3, r.y, 0), xx window_width, waveHeight, wavePitch, k * .01, waveOffset);
 
     scissorRect = get_rect(0, 0, xx window_width, xx window_height);
     set_scissor(scissorRect);
@@ -304,7 +320,7 @@ draw_one_frame :: (dt: float) {
     r.y -= k /2;
     slider(r, *signalLength, 0, 1000, 1, *slider_theme, "signal length");
     r.y -= k /2;
-    slider(r, *wavePitch, 0.0, 100.0, 1.0, *slider_theme, "pitch");
+    slider(r, *wavePitch, 1.0, 100.0, 1.0, *slider_theme, "pitch");
     r.y -= k /2;
     slider(r, *waveHeight, 0.0, 100.0, 1.0, *slider_theme, "height");
     r.y -= k /2;
