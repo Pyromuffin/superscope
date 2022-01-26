@@ -295,12 +295,26 @@ DrawScrollBar::( center : Vector3, totalWidth : float, viewableSize : float, off
     using Vectors;
     Simp.set_shader_for_color();
     // the size of the scroll bar is the viewed fraction ?
-    viewedFraction := (viewableSize/totalWidth) * viewableSize;
+    viewedFraction := (viewableSize/totalWidth);
+    barThickness := viewedFraction * viewableSize;
 
-    p0 := center + left * viewedFraction / 2 + up * height /2;
-    p1 := center + right * viewedFraction / 2 + up * height /2;
-    p2 := center + right * viewedFraction / 2 + down * height /2;
-    p3 := center + left * viewedFraction / 2 + down * height /2;
+    // an offset of zero means the bar should be touching the left side of the viewable area.
+    leftWall := center;
+    leftWall.x -= viewableSize / 2;
+    barCenter := leftWall + right * barThickness/2;
+    movableArea := viewableSize - barThickness;
+
+    // we want to move the bar center 1 movable area when the offset causes use to scroll the total distance.
+    // when offset is zero, the left side of the graph is on the left side
+    // when offset is -total size, the graph is completely off screen.
+    
+    scrolledFraction := abs(offset) / (totalWidth - viewableSize);
+    barCenter.x += movableArea * scrolledFraction;
+
+    p0 := barCenter + left * barThickness / 2 + up * height /2;
+    p1 := barCenter + right * barThickness / 2 + up * height /2;
+    p2 := barCenter + right * barThickness / 2 + down * height /2;
+    p3 := barCenter + left * barThickness / 2 + down * height /2;
 
     Simp.immediate_quad(p0,p1,p2,p3, Vector4.{1,1,1,1});
     Simp.immediate_flush();
@@ -357,6 +371,8 @@ draw_one_frame :: (dt: float) {
     label_theme.text_color = .{.9, .5, .5, 1};
 
     totalWidth := GetTimeOfLastTransition() * wavePitch;
+    label(r, tprint("total: %", totalWidth), *label_theme);
+
     viewableArea := window_width - k*3.5;
     center := vec3(k*3.5 + viewableArea / 2, r.y, 0);
  
@@ -370,7 +386,7 @@ draw_one_frame :: (dt: float) {
     r.y -= k /2;
     slider(r, *waveHeight, 0.0, 100.0, 1.0, *slider_theme, "height");
     r.y -= k /2;
-    slider(r, *waveOffset, -10000.0, 10000.0, 1.0, *slider_theme, "offset");
+    slider(r, *waveOffset, -10000.0, 0, 10.0, *slider_theme, "offset");
 
     DrawScrollBar(center, totalWidth, viewableArea, waveOffset, waveHeight);
 
