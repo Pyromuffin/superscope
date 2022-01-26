@@ -378,18 +378,10 @@ draw_one_frame :: (dt: float) {
  
     slider_theme: Slider_Theme;
     slider_theme.foreground.font = button_font;
-    // Integer value:
-    r.y -= k /2;
-    slider(r, *signalLength, 0, 1000, 1, *slider_theme, "signal length");
-    r.y -= k /2;
-    slider(r, *wavePitch, 1.0, 100.0, 1.0, *slider_theme, "pitch");
-    r.y -= k /2;
-    slider(r, *waveHeight, 0.0, 100.0, 1.0, *slider_theme, "height");
-    r.y -= k /2;
-    slider(r, *waveOffset, -10000.0, 0, 10.0, *slider_theme, "offset");
+
+    maxOffset := (totalWidth - viewableArea);
 
     DrawScrollBar(center, totalWidth, viewableArea, waveOffset, waveHeight);
-
 
     if(mouse_delta_z) {
         if(IsCtrlPressed())
@@ -398,7 +390,20 @@ draw_one_frame :: (dt: float) {
             waveOffset += mouse_delta_z ;
     }
 
+    waveOffset = clamp(waveOffset, -maxOffset, 0);
     wavePitch = max(wavePitch, 1);
+
+
+    r.y -= k /2;
+    slider(r, *signalLength, 0, 1000, 1, *slider_theme, "signal length");
+    r.y -= k /2;
+    slider(r, *wavePitch, 1.0, 100.0, 1.0, *slider_theme, "pitch");
+    r.y -= k /2;
+    slider(r, *waveHeight, 0.0, 100.0, 1.0, *slider_theme, "height");
+    r.y -= k /2;
+    slider(r, *waveOffset, -maxOffset, 0, 10.0, *slider_theme, "offset");
+
+
 
 /*
     
