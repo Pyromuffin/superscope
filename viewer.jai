@@ -12,6 +12,7 @@
 
 #import "GetRect";  // Other imports are below, but the point of this example is to use GetRect so this #import goes here.
 #import "fst";
+#import "Input";
 
 //
 // This example was copied from modules/Simp/examples/example.jai.
@@ -272,6 +273,18 @@ DrawTimelineTicks :: (start : Vector3, width : float, height : float, pitch : fl
     Simp.immediate_flush();
 }
 
+
+
+ProcessInput :: () {
+
+}
+
+
+IsCtrlPressed :: () -> bool {
+    return input_button_states[Key_Code.CTRL] & Key_Current_State.START || input_button_states[Key_Code.CTRL] & Key_Current_State.DOWN;
+}
+
+
 draw_one_frame :: (dt: float) {
     // Simp.update_window(my_window);
     Simp.clear_render_target(.15, .11, .11, 1);
@@ -303,13 +316,16 @@ draw_one_frame :: (dt: float) {
     // dont draw the waveform over the buttons
     scissorRect := get_rect(k*3.5, 0, xx window_width, xx window_height);
     set_scissor(scissorRect);
+
+    DrawTimelineTicks(vec3(r.x + k* 3, r.y, 0), xx window_width, waveHeight * -20, wavePitch, k * .01, waveOffset);
+
+
     for signals {
         if(it_index == 0 || it_index == signals.count -1) continue;
         DrawSignalVerts(signalVerts[it_index], make_vector3(r.x + k* 3 + waveOffset, r.y, 0), k * .01, wavePitch, waveHeight);
         r.y -= k/3;
     }
     
-    DrawTimelineTicks(vec3(r.x + k* 3, r.y, 0), xx window_width, waveHeight, wavePitch, k * .01, waveOffset);
 
     scissorRect = get_rect(0, 0, xx window_width, xx window_height);
     set_scissor(scissorRect);
@@ -325,6 +341,17 @@ draw_one_frame :: (dt: float) {
     slider(r, *waveHeight, 0.0, 100.0, 1.0, *slider_theme, "height");
     r.y -= k /2;
     slider(r, *waveOffset, -10000.0, 10000.0, 1.0, *slider_theme, "offset");
+
+
+
+    if(mouse_delta_z) {
+        if(IsCtrlPressed())
+            wavePitch += ifx mouse_delta_z > 0 then 1 else -1;
+        else
+            waveOffset += mouse_delta_z ;
+    }
+
+    wavePitch = max(wavePitch, 1);
 
 /*
     
