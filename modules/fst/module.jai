@@ -182,6 +182,8 @@ ProcessData :: (handle : fstHandle, time : u64, c_str : *u8, signals : [..] Sign
 
 #scope_export
 
+clockSignal : *Signal;
+
 Signal :: struct {
     name : string;
     depth : int;
@@ -267,6 +269,7 @@ LoadSignals :: (path : string) -> [..] Signal {
                 handle := var.handle;
                 signals[handle].depth = var.length;
                 signals[handle].name = copy_string( to_string(var.name.data) ); 
+                if signals[handle].name == "clk" then clockSignal = *signals[handle];
 
                 //print("%\n", var );
                 fstReaderClrFacProcessMaskAll(ctx);
@@ -358,6 +361,11 @@ DrawLine :: (start : Vector3, end : Vector3, thickness : float, color : Vector4 
 
     Simp.immediate_quad(p0, p1, p2, p3, color);
 }
+
+GetTimeOfLastTransition :: () -> u64 {
+    return clockSignal.times[clockSignal.times.count-1];
+}
+
 
 DrawSignalVerts :: ( verts : []Vector3, offset : Vector3, thickness : float, pitch : float, height : float) {
     Simp.set_shader_for_color();

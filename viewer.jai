@@ -284,6 +284,28 @@ IsCtrlPressed :: () -> bool {
     return input_button_states[Key_Code.CTRL] & Key_Current_State.START || input_button_states[Key_Code.CTRL] & Key_Current_State.DOWN;
 }
 
+Vectors :: struct {
+    up :: Vector3.{0,1,0};
+    down :: Vector3.{0,-1,0};
+    left :: Vector3.{-1,0,0};
+    right :: Vector3.{1,0,0};
+}
+
+DrawScrollBar::( center : Vector3, totalWidth : float, viewableSize : float, offset : float, height : float) {
+    using Vectors;
+    Simp.set_shader_for_color();
+    // the size of the scroll bar is the viewed fraction ?
+    viewedFraction := (viewableSize/totalWidth) * viewableSize;
+
+    p0 := center + left * viewedFraction / 2 + up * height /2;
+    p1 := center + right * viewedFraction / 2 + up * height /2;
+    p2 := center + right * viewedFraction / 2 + down * height /2;
+    p3 := center + left * viewedFraction / 2 + down * height /2;
+
+    Simp.immediate_quad(p0,p1,p2,p3, Vector4.{1,1,1,1});
+    Simp.immediate_flush();
+}
+
 
 draw_one_frame :: (dt: float) {
     // Simp.update_window(my_window);
@@ -319,7 +341,6 @@ draw_one_frame :: (dt: float) {
 
     DrawTimelineTicks(vec3(r.x + k* 3, r.y, 0), xx window_width, waveHeight * -20, wavePitch, k * .01, waveOffset);
 
-
     for signals {
         if(it_index == 0 || it_index == signals.count -1) continue;
         DrawSignalVerts(signalVerts[it_index], make_vector3(r.x + k* 3 + waveOffset, r.y, 0), k * .01, wavePitch, waveHeight);
@@ -330,6 +351,15 @@ draw_one_frame :: (dt: float) {
     scissorRect = get_rect(0, 0, xx window_width, xx window_height);
     set_scissor(scissorRect);
 
+    // width label;
+    label_theme: Label_Theme;
+    label_theme.alignment = .Left;
+    label_theme.text_color = .{.9, .5, .5, 1};
+
+    totalWidth := GetTimeOfLastTransition() * wavePitch;
+    viewableArea := window_width - k*3.5;
+    center := vec3(k*3.5 + viewableArea / 2, r.y, 0);
+ 
     slider_theme: Slider_Theme;
     slider_theme.foreground.font = button_font;
     // Integer value:
@@ -342,6 +372,7 @@ draw_one_frame :: (dt: float) {
     r.y -= k /2;
     slider(r, *waveOffset, -10000.0, 10000.0, 1.0, *slider_theme, "offset");
 
+    DrawScrollBar(center, totalWidth, viewableArea, waveOffset, waveHeight);
 
 
     if(mouse_delta_z) {
