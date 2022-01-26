@@ -274,9 +274,32 @@ DrawTimelineTicks :: (start : Vector3, width : float, height : float, pitch : fl
 }
 
 
+DrawRect :: ( r : Rect, color : Vector4 ) {
+    Simp.set_shader_for_color();
+    p0 := vec3(r.x, r.y, 0);
+    p1 := vec3(r.x + r.w, r.y, 0);
+    p2 := vec3(r.x + r.w, r.y + r.h, 0);
+    p3 := vec3(r.x, r.y + r.h, 0);
 
-ProcessInput :: () {
+    Simp.immediate_quad(p0,p1,p2,p3, color);
+    Simp.immediate_flush();
+}
 
+ProcessScrollBarClicks :: ( scrollRect : Rect ) -> bool, float {
+    
+    mouseX, mouseY, success := get_mouse_pointer_position(my_window, true);
+    clickOrHold := input_button_states[Key_Code.MOUSE_BUTTON_LEFT] & Key_Current_State.START || input_button_states[Key_Code.MOUSE_BUTTON_LEFT] & Key_Current_State.DOWN;
+
+    if is_inside( xx mouseX, xx mouseY, scrollRect) && clickOrHold {
+        // find the relative position within the rect.
+        x := mouseX - scrollRect.x;
+        y := mouseY - scrollRect.y;
+        xFraction := x / scrollRect.w;
+
+        return true, xFraction;
+    }
+
+    return false, 0;
 }
 
 
@@ -381,13 +404,24 @@ draw_one_frame :: (dt: float) {
 
     maxOffset := (totalWidth - viewableArea);
 
+    scrollRect := get_rect(r.x + k* 3, r.y, viewableArea, waveHeight);
+
+    DrawRect(scrollRect, Vector4.{0, 0.4, 0, 1} );
     DrawScrollBar(center, totalWidth, viewableArea, waveOffset, waveHeight);
+
+    // scrolling input
 
     if(mouse_delta_z) {
         if(IsCtrlPressed())
             wavePitch += ifx mouse_delta_z > 0 then 1 else -1;
         else
             waveOffset += mouse_delta_z ;
+    }
+
+    clicked, frac := ProcessScrollBarClicks(scrollRect);
+
+    if(clicked) {
+        waveOffset = -lerp(0, maxOffset, frac);
     }
 
     waveOffset = clamp(waveOffset, -maxOffset, 0);
