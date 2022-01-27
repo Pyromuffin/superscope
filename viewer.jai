@@ -430,7 +430,7 @@ draw_one_frame :: (dt: float) {
 
     for signals {
         if(it_index == 0 || it_index == signals.count -1) continue;
-        DrawSignalVerts(signalVerts[it_index], make_vector3(r.x + k* 3 + waveOffset, r.y, 0), k * .01, wavePitch, waveHeight);
+        DrawSignalVerts(signalVerts[it_index], make_vector3(r.x + k* 3 + waveOffset, r.y, 0), k * .02, wavePitch, waveHeight, true);
         r.y -= k/3;
     }
     
