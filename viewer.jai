@@ -260,21 +260,21 @@ waveOffset := 0.0;
 
 vec3 :: make_vector3;
 
-DrawTimelineTicks :: (start : Vector3, width : float, height : float, pitch : float, thickness : float, offset : float) {
+DrawTimelineTicks :: (graph : Rect, pitch : float, thickness : float, offset : float) {
     tickLength := pitch;
     phase := fmod(offset, tickLength) * vec3(1,0,0);
-    numberOfTicks := cast(int)ceil(width / tickLength);
+    numberOfTicks := cast(int)ceil(graph.w / tickLength);
     for 0 .. numberOfTicks - 1 {
-        pos := start + phase;
+        pos := vec3(graph.x, graph.y, 0) + phase;
         pos.x += it * tickLength;
-        DrawLine(pos, pos + vec3(0,1,0) * height, thickness, Vector4.{0,0.3,0,1} );
+        DrawLine(pos, pos + vec3(0,1,0) * graph.h, thickness, Vector4.{0,0.3,0,1} );
     }
 
     Simp.immediate_flush();
 }
 
 
-DrawRect :: ( r : Rect, color : Vector4 ) {
+DrawRect :: ( r : Rect, color : Vector4 = Vector4.{1,1,1,1} ) {
     Simp.set_shader_for_color();
     p0 := vec3(r.x, r.y, 0);
     p1 := vec3(r.x + r.w, r.y, 0);
@@ -285,6 +285,7 @@ DrawRect :: ( r : Rect, color : Vector4 ) {
     Simp.immediate_flush();
 }
 
+// we probably want to create a generic scrollbar state for this.
 dragging := false;
 
 ProcessScrollBarClicks :: ( scrollRect : Rect ) -> bool, float {
@@ -293,7 +294,10 @@ ProcessScrollBarClicks :: ( scrollRect : Rect ) -> bool, float {
     clickOrHold := input_button_states[Key_Code.MOUSE_BUTTON_LEFT] & Key_Current_State.START || input_button_states[Key_Code.MOUSE_BUTTON_LEFT] & Key_Current_State.DOWN;
     draggingOutsideWindow := dragging && ( input_button_states[Key_Code.MOUSE_BUTTON_LEFT] & Key_Current_State.DOWN );
 
-    if draggingOutsideWindow || ( is_inside( xx mouseX, xx mouseY, scrollRect)  && clickOrHold ) {
+    insideScrollBar := is_inside( xx mouseX, xx mouseY, scrollRect) && clickOrHold;
+
+
+    if draggingOutsideWindow || insideScrollBar {
         // find the relative position within the rect.
         dragging = true;
         x := mouseX - scrollRect.x;
@@ -305,6 +309,19 @@ ProcessScrollBarClicks :: ( scrollRect : Rect ) -> bool, float {
     dragging = false;
     return false, 0;
 }
+
+ProcessMiddleClickDragging :: (graphRect : Rect) -> bool, int {
+    mouseX, mouseY, success := get_mouse_pointer_position(my_window, true);
+    middleClick := input_button_states[Key_Code.MOUSE_BUTTON_MIDDLE] & Key_Current_State.START || input_button_states[Key_Code.MOUSE_BUTTON_MIDDLE] & Key_Current_State.DOWN;
+    insideGraph := is_inside( xx mouseX, xx mouseY, graphRect) && middleClick;
+
+    if insideGraph {
+        return true, mouse_delta_x;
+    }
+        
+    return false, 0;
+}
+
 
 
 IsCtrlPressed :: () -> bool {
@@ -347,7 +364,6 @@ DrawScrollBar::( center : Vector3, totalWidth : float, viewableSize : float, off
     Simp.immediate_flush();
 }
 
-
 draw_one_frame :: (dt: float) {
     // Simp.update_window(my_window);
     Simp.clear_render_target(.15, .11, .11, 1);
@@ -375,12 +391,41 @@ draw_one_frame :: (dt: float) {
         r.y -= k/3;
     }
 
+    graphWidth := window_width - k*3.5;
+    graphHeight := (signals.count -1) * k/3;
+    graphRect := get_rect(r.x + k *3, r.y, graphWidth, graphHeight);
+    scrollRect := get_rect(r.x + k* 3, r.y, graphWidth, waveHeight * 1.5);
+    totalWidth := GetTimeOfLastTransition() * wavePitch;
+    maxOffset := (totalWidth - graphWidth);
+
+
+    // input processing
+
+    if(mouse_delta_z) {
+        if(IsCtrlPressed())
+            wavePitch += ifx mouse_delta_z > 0 then 1 else -1;
+        else
+            waveOffset += mouse_delta_z ;
+    }
+
+    clicked, frac := ProcessScrollBarClicks(scrollRect);
+
+    if(clicked) {
+        waveOffset = -lerp(0, maxOffset, frac);
+    }
+
+    grabbed, grabOffset := ProcessMiddleClickDragging(graphRect);
+    if(grabbed){
+        waveOffset += grabOffset;
+    }
+
+
     r.y = startHeight;
     // dont draw the waveform over the buttons
     scissorRect := get_rect(k*3.5, 0, xx window_width, xx window_height);
     set_scissor(scissorRect);
 
-    DrawTimelineTicks(vec3(r.x + k* 3, r.y, 0), xx window_width, waveHeight * -20, wavePitch, k * .01, waveOffset);
+    DrawTimelineTicks(graphRect, wavePitch, k * .01, waveOffset);
 
     for signals {
         if(it_index == 0 || it_index == signals.count -1) continue;
@@ -397,36 +442,18 @@ draw_one_frame :: (dt: float) {
     label_theme.alignment = .Left;
     label_theme.text_color = .{.9, .5, .5, 1};
 
-    totalWidth := GetTimeOfLastTransition() * wavePitch;
     label(r, tprint("total: %", totalWidth), *label_theme);
 
-    viewableArea := window_width - k*3.5;
-    center := vec3(k*3.5 + viewableArea / 2, r.y + waveHeight * .75, 0);
+    center := vec3(k*3.5 + graphWidth / 2, r.y + waveHeight * .75, 0);
  
     slider_theme: Slider_Theme;
     slider_theme.foreground.font = button_font;
 
-    maxOffset := (totalWidth - viewableArea);
 
-    scrollRect := get_rect(r.x + k* 3, r.y, viewableArea, waveHeight * 1.5);
 
     DrawRect(scrollRect, Vector4.{0, 0.4, 0, 1} );
-    DrawScrollBar(center, totalWidth, viewableArea, waveOffset, waveHeight);
+    DrawScrollBar(center, totalWidth, graphWidth, waveOffset, waveHeight);
 
-    // scrolling input
-
-    if(mouse_delta_z) {
-        if(IsCtrlPressed())
-            wavePitch += ifx mouse_delta_z > 0 then 1 else -1;
-        else
-            waveOffset += mouse_delta_z ;
-    }
-
-    clicked, frac := ProcessScrollBarClicks(scrollRect);
-
-    if(clicked) {
-        waveOffset = -lerp(0, maxOffset, frac);
-    }
 
     waveOffset = clamp(waveOffset, -maxOffset, 0);
     wavePitch = max(wavePitch, 1);
