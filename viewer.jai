@@ -19,7 +19,7 @@
 // It will continue to diverge over time, probably.
 //
 
-SCALE :: 1.5;  // I use this during development to quickly make the window real big.
+SCALE :: 1;  // I use this during development to quickly make the window real big.
 
 my_window: Window_Type;
 window_width  : s32 = xx (1920*SCALE);
@@ -250,7 +250,6 @@ main :: () {
 }
 
 
-signalLength : u64 = 100;
 signalString := "";
 signalVerts : [..][..]Vector3;
 selectedAny := false;
@@ -419,6 +418,8 @@ draw_one_frame :: (dt: float) {
         waveOffset += grabOffset;
     }
 
+    waveOffset = clamp(waveOffset, -maxOffset, 0);
+    wavePitch = max(wavePitch, 1);
 
     r.y = startHeight;
     // dont draw the waveform over the buttons
@@ -455,12 +456,7 @@ draw_one_frame :: (dt: float) {
     DrawScrollBar(center, totalWidth, graphWidth, waveOffset, waveHeight);
 
 
-    waveOffset = clamp(waveOffset, -maxOffset, 0);
-    wavePitch = max(wavePitch, 1);
 
-
-    r.y -= k /2;
-    slider(r, *signalLength, 0, 1000, 1, *slider_theme, "signal length");
     r.y -= k /2;
     slider(r, *wavePitch, 1.0, 100.0, 1.0, *slider_theme, "pitch");
     r.y -= k /2;
