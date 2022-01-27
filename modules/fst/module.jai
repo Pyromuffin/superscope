@@ -368,7 +368,7 @@ GetTimeOfLastTransition :: () -> u64 {
 
 
 DrawSignalVerts :: ( verts : []Vector3, offset : Vector3, thickness : float, pitch : float, height : float, withFill : bool = true) {
-    Simp.set_shader_for_color();
+    Simp.set_shader_for_color(true);
 
     //immediate_quad:  (p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, color := Vector4.{1,1,1,1}, uv0 := Vector2.{0,0}, uv1 := Vector2.{1,0}, uv2 := Vector2.{1,1}, uv3 := Vector2.{0, 1});
 
@@ -456,6 +456,28 @@ DrawSignalVerts :: ( verts : []Vector3, offset : Vector3, thickness : float, pit
     start := verts[verts.count -1];
     startX := dist;
     dist += (1000) * pitch;
+
+    if (withFill && start.y == 1) {
+
+        p0.x = startX + thickness / 2;;
+        p0.y = start.y * height + thickness;
+        p0.z = 0;
+
+        p1.x = dist;
+        p1.y = start.y * height + thickness;
+        p1.z = 0;
+
+        p2.x = dist;
+        p2.y = -thickness / 2;
+        p2.z = 0;
+
+        p3.x = startX + thickness / 2;
+        p3.y = -thickness / 2;
+        p3.z = 0;
+
+        Simp.immediate_quad(p0 + offset, p1 + offset, p2 + offset, p3 + offset, color * 0.5);
+    }
+
 
     p0.x = startX;
     p0.y = start.y * height + thickness /2;
