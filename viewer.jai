@@ -285,20 +285,24 @@ DrawRect :: ( r : Rect, color : Vector4 ) {
     Simp.immediate_flush();
 }
 
+dragging := false;
+
 ProcessScrollBarClicks :: ( scrollRect : Rect ) -> bool, float {
     
     mouseX, mouseY, success := get_mouse_pointer_position(my_window, true);
     clickOrHold := input_button_states[Key_Code.MOUSE_BUTTON_LEFT] & Key_Current_State.START || input_button_states[Key_Code.MOUSE_BUTTON_LEFT] & Key_Current_State.DOWN;
+    draggingOutsideWindow := dragging && ( input_button_states[Key_Code.MOUSE_BUTTON_LEFT] & Key_Current_State.DOWN );
 
-    if is_inside( xx mouseX, xx mouseY, scrollRect) && clickOrHold {
+    if draggingOutsideWindow || ( is_inside( xx mouseX, xx mouseY, scrollRect)  && clickOrHold ) {
         // find the relative position within the rect.
+        dragging = true;
         x := mouseX - scrollRect.x;
-        y := mouseY - scrollRect.y;
         xFraction := x / scrollRect.w;
 
         return true, xFraction;
     }
-
+        
+    dragging = false;
     return false, 0;
 }
 
@@ -397,14 +401,14 @@ draw_one_frame :: (dt: float) {
     label(r, tprint("total: %", totalWidth), *label_theme);
 
     viewableArea := window_width - k*3.5;
-    center := vec3(k*3.5 + viewableArea / 2, r.y, 0);
+    center := vec3(k*3.5 + viewableArea / 2, r.y + waveHeight * .75, 0);
  
     slider_theme: Slider_Theme;
     slider_theme.foreground.font = button_font;
 
     maxOffset := (totalWidth - viewableArea);
 
-    scrollRect := get_rect(r.x + k* 3, r.y, viewableArea, waveHeight);
+    scrollRect := get_rect(r.x + k* 3, r.y, viewableArea, waveHeight * 1.5);
 
     DrawRect(scrollRect, Vector4.{0, 0.4, 0, 1} );
     DrawScrollBar(center, totalWidth, viewableArea, waveOffset, waveHeight);
