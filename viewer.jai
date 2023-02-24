@@ -48,17 +48,6 @@ dropped_files: [..] string;
 spells: [..] string;  // We make a radio button of which spell to cast.
 current_spell := -1;
 
-// Text_Input_And_Rect is a temporary situation that we'll probably modify.
-Text_Input_And_Rect :: struct {
-    input: Text_Input;
-    rect:  Rect;
-}
-
-input_a: Text_Input_And_Rect;
-input_b: Text_Input_And_Rect;
-input_c: Text_Input_And_Rect;
-
-input_teas: Text_Input_And_Rect;
 
 Damage_Resistance :: enum_flags u16 {
     PIERCING;
@@ -176,11 +165,6 @@ main :: () {
     my_init_fonts();
     ui_init();
 
-    set_text(*input_a.input, "Lord Dimwit Flathead");
-    set_text(*input_b.input, "Flood Control Dam #3");
-    set_text(*input_c.input, "The Troll Room");
-
-    set_auto_complete(*input_teas.input, auto_complete_teas, null);
     
     // Add some groceries.
 
@@ -261,7 +245,7 @@ vec3 :: make_vector3;
 
 DrawTimelineTicks :: (graph : Rect, pitch : float, thickness : float, offset : float) {
     tickLength := pitch;
-    phase := fmod(offset, tickLength) * vec3(1,0,0);
+    phase := fmod_cycling(offset, tickLength) * vec3(1,0,0);
     numberOfTicks := cast(int)ceil(graph.w / tickLength);
     for 0 .. numberOfTicks - 1 {
         pos := vec3(graph.x, graph.y, 0) + phase;
